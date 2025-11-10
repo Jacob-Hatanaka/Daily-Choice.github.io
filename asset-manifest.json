@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/Daily-Choice.github.io/static/css/main.2cb9a270.css",
-    "main.js": "/Daily-Choice.github.io/static/js/main.d99fc61b.js",
+    "main.css": "/Daily-Choice.github.io/static/css/main.b45b2f6a.css",
+    "main.js": "/Daily-Choice.github.io/static/js/main.f40bd166.js",
     "index.html": "/Daily-Choice.github.io/index.html",
-    "main.2cb9a270.css.map": "/Daily-Choice.github.io/static/css/main.2cb9a270.css.map",
-    "main.d99fc61b.js.map": "/Daily-Choice.github.io/static/js/main.d99fc61b.js.map"
+    "main.b45b2f6a.css.map": "/Daily-Choice.github.io/static/css/main.b45b2f6a.css.map",
+    "main.f40bd166.js.map": "/Daily-Choice.github.io/static/js/main.f40bd166.js.map"
   },
   "entrypoints": [
-    "static/css/main.2cb9a270.css",
-    "static/js/main.d99fc61b.js"
+    "static/css/main.b45b2f6a.css",
+    "static/js/main.f40bd166.js"
   ]
 }
