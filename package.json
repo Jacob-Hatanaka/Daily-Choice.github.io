@@ -12,7 +12,9 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "bootstrap": "^5.3.8",
     "react": "^19.2.0",
+    "react-bootstrap": "^2.10.10",
     "react-dom": "^19.2.0",
     "react-scripts": "^5.0.0",
     "universal-cookie": "^8.0.1"
