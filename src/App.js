@@ -102,11 +102,13 @@ export default function App() {
     const intervalId = setInterval(() => {
       setCurrentTime(getNumericalDate());
     }, 60 * 1000); // Update every 60 seconds (1 minute)
-    if (Game.resources.daily.amount == 0 && Game.lastDate !== currentTime) {
+    if (Game.resources.daily.amount == 0 && Game.lastDate < currentTime) {
       Game.resources.daily.addAmount(1);
     }
     return () => clearInterval(intervalId);
   }, []);
+  let date = new Date();
+  let timeUntilMidnight = (23-date.getHours())+'hrs, ' + (60-date.getMinutes())+'mins';
   return (
     <div className="d-flex flex-column min-vh-100">
       <Container className="flex-grow-1">
@@ -165,6 +167,7 @@ export default function App() {
           cookies.remove('unlocks', { path: '/' });
           window.location.reload();
         }}>Reset Game</button>
+        &nbsp;next day in: {timeUntilMidnight}
       </footer>
     </div>
   );
