@@ -7,7 +7,7 @@ const cookies = new Cookies();
 let Game = {};
 
 class Resource {
-  constructor(name, amount, displayed = true, gain = 0, unlockindex=0) {
+  constructor(name, amount, displayed = true, gain = 0, unlockindex = 0) {
     this.name = name;
     this.amount = cookies.get(name) ? parseInt(cookies.get(name)) : amount;
     this.gain = cookies.get(name + 'Gain') ? parseInt(cookies.get(name + 'Gain')) : gain;
@@ -17,26 +17,29 @@ class Resource {
   addAmount(amount) {
     this.amount += amount;
     cookies.set(this.name, this.amount, { path: '/' });
-    if (this.displayed) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
+    if (this.isDisplayed()) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
     window.location.reload();
   }
   setAmount(amount) {
     this.amount = amount;
     cookies.set(this.name, this.amount, { path: '/' });
-    if (this.displayed) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
+    if (this.isDisplayed()) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
     window.location.reload();
   }
   addGain(gain) {
     this.gain += gain;
     cookies.set(this.name + 'Gain', this.gain, { path: '/' });
-    if (this.displayed) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
+    if (this.isDisplayed()) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
     window.location.reload();
   }
   setGain(gain) {
     this.gain = gain;
     cookies.set(this.name + 'Gain', this.gain, { path: '/' });
-    if (this.displayed) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
+    if (this.isDisplayed()) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
     window.location.reload();
+  }
+  isDisplayed() {
+    return this.displayed && this.unlockindex <= Game.resources.unlocks.amount;
   }
 }
 Game.resources = {
@@ -44,6 +47,8 @@ Game.resources = {
   unlocks: new Resource('unlocks', 0, false),
   choices: new Resource('choices', 0, true, 1, 0),
   decisions: new Resource('decisions', 0, true, 0, 1),
+  action: new Resource('action', 0, true, 0, 2),
+  patience: new Resource('patience', 0, true, 0, 2),
 }
 //special resources
 cookies.get('lastChoiceClick') ? Game.lastDate = parseInt(cookies.get('lastChoiceClick')) : Game.lastDate = null;
@@ -51,7 +56,7 @@ cookies.get('lastChoiceClick') ? Game.lastDate = parseInt(cookies.get('lastChoic
 //buttons
 
 class ButtonAction {
-  constructor(name, action, cost, tooltip, unlockindex=0) {
+  constructor(name, action, cost, unlockindex = 0, tooltip) {
     this.name = name;
     this.action = action;
     this.cost = cost;
@@ -84,10 +89,19 @@ Game.buttonActions = {
       }
     });
     cookies.set('lastChoiceClick', getNumericalDate(), { path: '/' });
-  }, { daily: 1 }, 'Make a choice to gain 1 Choice resource. Resets daily.'),
-  makeDecision: new ButtonAction('Ponder Decisively', function () {
+  }, { daily: 1 }, 0, 'Resets daily.'),
+
+  makeDecision: new ButtonAction('Ponder', function () { //perhaps the buttons with names not including its own resource gives gain but those with its resource simply give it
     Game.resources.decisions.addGain(1);
-  }, { choices: 1 }, 'Ponder to gain 1 Decision resource per Make a Choice. Costs 1 Choice resource.',1),
+  }, { choices: 1 }, 1, 'To which should thy thoughts lie, perhaps you should Ponder. Costs 1 Choice resource.'),
+
+  takeAction: new ButtonAction('Take Action', function () {
+    Game.resources.action.addAmount(1 + (Game.resources.patience.amount > Game.resources.action.amount));
+  }, { decisions: 1 }, 2, 'Hesitation leads to death, be swift, Take Action. Costs 1 Decision resource.'),
+
+  waitPatiently: new ButtonAction('Wait Patiently', function () {
+    Game.resources.patience.addAmount(1 + (Game.resources.action.amount > Game.resources.patience.amount));
+  }, { decisions: 1 }, 2, 'Swiftness only goads error, Wait Patiently. Costs 1 Decision resource.'),
 }
 
 function getNumericalDate() {
@@ -108,18 +122,18 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, []);
   let date = new Date();
-  let timeUntilMidnight = (23-date.getHours())+'hrs, ' + (60-date.getMinutes())+'mins';
+  let timeUntilMidnight = (23 - date.getHours()) + 'hrs, ' + (60 - date.getMinutes()) + 'mins';
   return (
     <div className="d-flex flex-column min-vh-100">
       <Container className="flex-grow-1">
         <Row>
           <Col>
-            {Object.entries(Game.resources).filter(([key, value]) => { return value.displayed && value.unlockindex <= Game.resources.unlocks.amount; }).map(([key, value]) => {
+            {Object.entries(Game.resources).filter(([key, value]) => { return value.isDisplayed(); }).map(([key, value]) => {
               const tooltipId = `tooltip-${key}`;
               return (
-                <div>
-                  <div id={value.name} key={key} className="tooltip-container d-inline-block m-2" tabIndex={0} aria-describedby={tooltipId}>
-                    {value.name}: {value.amount}
+                <div key={key}>
+                  <div className="tooltip-container d-inline-block m-2" tabIndex={0} aria-describedby={tooltipId}>
+                    <p id={value.name} className="m-0">{value.name}: {value.amount}</p>
                     {value.gain > 0 && <div id={tooltipId} role="tooltip" className="tooltip-text">
                       <p>Gain {value.gain} every Make a Choice</p>
                     </div>}
@@ -129,7 +143,7 @@ export default function App() {
             })}
           </Col>
           <Col xs="8">
-            {Object.entries(Game.buttonActions).filter(([key,value]) => { return value.unlockindex <= Game.resources.unlocks.amount; }).map(([key, value]) => {
+            {Object.entries(Game.buttonActions).filter(([key, value]) => { return value.unlockindex <= Game.resources.unlocks.amount; }).map(([key, value]) => {
               const tooltipId = `tooltip-${key}`;
               return (
                 <div key={key} className="tooltip-container d-inline-block m-2" tabIndex={0} aria-describedby={tooltipId}>
@@ -148,7 +162,9 @@ export default function App() {
                   </Button>
                   {value.tooptip && <div id={tooltipId} role="tooltip" className="tooltip-text">
                     <h3 className="m-0">{value.name}</h3>
-                    <p>{value.tooptip}</p>
+                    {value.tooptip.split('\n').map((line, index) => (
+                      <p key={index} className="m-0">{line}</p>
+                    ))}
                   </div>}
                 </div>
               );
@@ -158,22 +174,22 @@ export default function App() {
       </Container>
       <footer className="mt-auto">
         <button onClick={() => {
-          cookies.remove('choices', { path: '/' });
-          cookies.remove('choicesGain', { path: '/' });
-          cookies.remove('decisions', { path: '/' });
-          cookies.remove('decisionsGain', { path: '/' });
+          for (let resource in Game.resources) {
+            cookies.remove(Game.resources[resource].name, { path: '/' });
+            cookies.remove(Game.resources[resource].name + 'Gain', { path: '/' });
+          }
           cookies.remove('lastChoiceClick', { path: '/' });
-          cookies.remove('daily', { path: '/' });
-          cookies.remove('unlocks', { path: '/' });
           window.location.reload();
         }}>Reset Game</button>
-        &nbsp;next day in: {timeUntilMidnight}
+        &nbsp;next day in: {timeUntilMidnight}&nbsp;
+        <button onClick={() => { Game.resources.daily.addAmount(1); }} className='d-none'>Skip to Next Day</button>
       </footer>
-    </div>
+    </div >
   );
 }
 
 /* to do
-enable buttons when affordable again
-
+  add cheat cookie for next day button for testing
+  add function to action and patience
+  hold- wait for time (give up daily choice)
 */
