@@ -131,3 +131,9 @@ body {
   border-style: solid;
   border-color: transparent rgba(0,0,0,0.85) transparent transparent;
 }
+
+.topnav {
+  border-bottom: 1px solid rgb(25, 30, 35);
+  border-radius: 1px;
+  padding: 10px 15px;
+}
