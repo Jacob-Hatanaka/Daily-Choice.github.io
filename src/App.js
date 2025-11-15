@@ -18,25 +18,21 @@ class Resource {
     this.amount += amount;
     cookies.set(this.name, this.amount, { path: '/' });
     if (this.isDisplayed()) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
-    window.location.reload();
   }
   setAmount(amount) {
     this.amount = amount;
     cookies.set(this.name, this.amount, { path: '/' });
     if (this.isDisplayed()) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
-    window.location.reload();
   }
   addGain(gain) {
     this.gain += gain;
     cookies.set(this.name + 'Gain', this.gain, { path: '/' });
     if (this.isDisplayed()) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
-    window.location.reload();
   }
   setGain(gain) {
     this.gain = gain;
     cookies.set(this.name + 'Gain', this.gain, { path: '/' });
     if (this.isDisplayed()) document.getElementById(this.name).innerHTML = this.name + ': ' + this.amount;
-    window.location.reload();
   }
   isDisplayed() {
     return this.displayed && this.unlockindex <= Game.resources.unlocks.amount;
@@ -50,6 +46,7 @@ Game.resources = {
   patience: new Resource('patience', 0, true, 0, 2),
   action: new Resource('action', 0, true, 0, 3),
   balance: new Resource('balance', 0, true, 0, 6),
+  monochroma: new Resource('monochroma', 0, true, 0, 7),
 }
 //special resources
 cookies.get('lastChoiceClick') ? Game.lastDate = parseInt(cookies.get('lastChoiceClick')) : Game.lastDate = null;
@@ -79,7 +76,6 @@ class ButtonAction {
     for (let resource in this.cost) {
       Game.resources[resource].addAmount(-this.cost[resource]);
     }
-    window.location.reload();
   }
 }
 
@@ -90,6 +86,7 @@ Game.buttonActions = {
         Game.resources[key].addAmount(Game.resources[key].gain);
       }
     });
+    if (Game.resources.balance.gain >= 1) Game.resources.balance.addGain(-Game.resources.balance.gain);
     cookies.set('lastChoiceClick', getNumericalDate(), { path: '/' });
   }, { daily: 1 }, 0, 0, 'Resets daily.'),
 
@@ -99,11 +96,11 @@ Game.buttonActions = {
 
   waitPatiently: new ButtonAction('Wait Patiently', function () {
     Game.resources.patience.addAmount(1);
-  }, { decisions: 1 }, 2, 1, '\'To the mind that is still, the whole universe surrenders\', Wait Patiently. Costs 1 Decision.'), //Lao Tzu
+  }, { decisions: 1 }, 2, 1, '\'To the mind that is still, the whole universe surrenders.\' Costs 1 Decision.'), //Lao Tzu
 
   takeAction: new ButtonAction('Take Action', function () {
     Game.resources.action.addAmount(1);
-  }, { decisions: 1, patience: 1 }, 3, 1, '\'He who hesitates is lost\', Take Action. Costs 1 Decision and 1 Patience.'),//Joseph Addison 
+  }, { decisions: 1, patience: 1 }, 3, 1, '\'He who hesitates is lost.\' Costs 1 Decision and 1 Patience.'),//Joseph Addison 
 
   quickThinking: new ButtonAction('Quick Thinking', function () {
     Game.resources.choices.addGain(1);
@@ -111,15 +108,27 @@ Game.buttonActions = {
 
   stillness: new ButtonAction('Embrace Stillness', function () {
     Game.resources.patience.addGain(1);
-  }, { choices: 1, patience: 1 }, 4, 2, '\'In the midst of movement and chaos, keep stillness inside of you,\' Embrace Stillness. Costs 1 Choice and 1 Patience.'), //Deepak Chopra
+  }, { choices: 1, patience: 1 }, 4, 2, '\'In the midst of movement and chaos, keep stillness inside of you.\' Costs 1 Choice and 1 Patience.'), //Deepak Chopra
 
   cycleAction: new ButtonAction('Cycle', function () {
     Game.resources.action.addGain(1);
   }, { action: 1, patience: 1 }, 5, 3, '\'Nature does not hurry, yet everything is accomplished.\' Costs 1 Action and 1 Patience.'), //Lao Tzu
 
-  balance: new ButtonAction('Balance', function () {
+  balance: new ButtonAction('Balance', function () { // balance is a special resource that can never be lost, whenever its used, it is regained the next day
     Game.resources.balance.addAmount(1);
-  }, { choices: 2, decisions: 2, patience: 5, action: 5 }, 6, 3, 'Find the converging path. Costs 2 Choices, 2 Decisions, 5 Patience, and 5 Action.'),
+  }, 
+  //kinda poor to look at but works
+  //increments cost since balance isnt truly used
+  { choices: 2+(Game.resources.balance.amount+Game.resources.balance.gain), 
+    decisions: 2+(Game.resources.balance.amount+Game.resources.balance.gain), 
+    patience: 5+(Game.resources.balance.amount+Game.resources.balance.gain), 
+    action: 5+(Game.resources.balance.amount+Game.resources.balance.gain) }, 
+  6, 3, `Find the converging path, where vanishment and materialization mix. Costs ${2+Game.resources.balance.amount+Game.resources.balance.gain} Choices, ${2+Game.resources.balance.amount+Game.resources.balance.gain} Decisions, ${5+Game.resources.balance.amount+Game.resources.balance.gain} Patience, and ${5+Game.resources.balance.amount+Game.resources.balance.gain} Action.`),
+
+  monochromity: new ButtonAction('Monochromity', function () {
+    Game.resources.monochroma.addAmount(1);
+    Game.resources.balance.addGain(1);
+  }, { balance: 1 }, 7, 4, 'Achieve oneness. Costs 1 Balance.'),
 
   //'\'Happiness is not a matter of intensity but of balance, order, rhythm and harmony.\' can be used when we have all of those resources
 }
@@ -180,6 +189,7 @@ export default function App() {
                           if (value.unlockindex === Game.resources.unlocks.amount) {
                             Game.resources.unlocks.addAmount(1);
                           }
+                          window.location.reload();
                         } else {
                           console.log('Not enough resources!');
                         }
@@ -230,7 +240,6 @@ export default function App() {
 }
 
 /* to do
-  add cheat cookie for next day button for testing
-  add function to action and patience
+  fix loading so it doesnt flash
   hold- wait for time (give up daily choice)
 */
