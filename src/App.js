@@ -57,15 +57,19 @@ class ButtonAction {
 }
 Game.buttonActions = {
   buyPlant: new ButtonAction('Buy Plant', function () {
-    Object.keys(Game.resources).forEach((key) => {
-      if (Game.resources[key].gain > 0) {
-        Game.resources[key].addAmount(Game.resources[key].gain);
-      }
-    });
-    if (Game.resources.balance.gain >= 1) Game.resources.balance.addGain(-Game.resources.balance.gain);
-    cookies.set('lastChoiceClick', getNumericalDate(), { path: '/' });
-  }, { daily: 1 }, 'Resets daily.'),
+    Game.resources.plants.addAmount(1);
+  }, { money: Game.resources.plants.amount*Game.resources.plantlevel.amount }, 'Cost: ' + Game.resources.plants.amount*Game.resources.plantlevel.amount + ' money'),
 }
+Game.time = 0;
+const Plant =() => {
+  disableTimer = -1;
+  return  
+    (
+    <Button onClick={function () {Game.time += 1;Game.resources.money.addAmount(1+Game.resources.plantlevel.amount);disableTimer = Game.time+5;window.location.reload();}} disabled={disableTimer > Game.time}>
+       
+    </Button>
+    );
+};
 /*
 //special resources
 cookies.get('lastChoiceClick') ? Game.lastDate = parseInt(cookies.get('lastChoiceClick')) : Game.lastDate = null;
@@ -97,6 +101,7 @@ export default function App() {
             })}
           </Col>
           <Col xs="8">
+          <div>
           {Object.entries(Game.buttonActions).map(([key, value]) => {
                   const tooltipId = `tooltip-${key}`;
                   return (
@@ -121,8 +126,18 @@ export default function App() {
                     </div>
                   );
                 })}
+            </div>
             <div>
-
+                <Button onClick={() => {Game.time += 1;window.location.reload();}}>Wait</Button>
+            </div>
+            <div>
+              {Array.from({ length: Game.resources.plotsize.amount }, (v, i) => i).map((i) => (
+                <div key={i} className="plot-cell">
+                  {Array.from({length:Game.resources.plants.amount}, (v, j) => j).map((j) => (
+                    <Plant key={j} />
+                  ))}
+                </div>
+              ))}
             </div>
           </Col>
         </Row>
