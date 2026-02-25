@@ -57,30 +57,47 @@ class ButtonAction {
 }
 Game.buttonActions = {
   buyPlant: new ButtonAction('Buy Plant', function () {
+    if (Game.resources.plants.amount >= Game.resources.plotsize.amount * Game.resources.plotsize.amount) return;
     Game.resources.plants.addAmount(1);
   }, { money: Game.resources.plants.amount*Game.resources.plantlevel.amount }, 'Cost: ' + Game.resources.plants.amount*Game.resources.plantlevel.amount + ' money'),
+  expandPlot: new ButtonAction('Expand Plot', function () {
+    Game.resources.plotsize.addAmount(1);
+  }, { money: Game.resources.plotsize.amount * Game.resources.plotsize.amount * 5 }, 'Cost: ' + Game.resources.plotsize.amount * Game.resources.plotsize.amount * 5 + ' money'),
+  upgradePlants: new ButtonAction('Upgrade Plants', function () {
+    Game.resources.plantlevel.addAmount(1);
+  }, { money: (Game.resources.plantlevel.amount+1) * 10 }, 'Cost: ' + (Game.resources.plantlevel.amount+1) * 10 + ' money'),
 }
-Game.time = 0;
-const Plant =() => {
-  disableTimer = -1;
-  return  
-    (
-    <Button onClick={function () {Game.time += 1;Game.resources.money.addAmount(1+Game.resources.plantlevel.amount);disableTimer = Game.time+5;window.location.reload();}} disabled={disableTimer > Game.time}>
-       
-    </Button>
-    );
-};
+
 /*
 //special resources
 cookies.get('lastChoiceClick') ? Game.lastDate = parseInt(cookies.get('lastChoiceClick')) : Game.lastDate = null;
 }*/
-
-function getNumericalDate() {
-  let date = new Date();
-  return parseInt(date.getFullYear() + '' + (date.getMonth() + 1) + '' + date.getDate());
-}
+const Plots = ({t,n,click}) => {
+  return (
+    <div className="plots">
+      {Array.from({length:n},(_value,index)=>(
+        <div className='board-row' key={index}>
+          {Array.from({length:n},(_value,indexm)=>(
+            <Plant t={t} click={click} key={indexm}  />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
+  const Plant =({t,click}) => {
+    let growthTime = -1;
+  return (
+    <Button onClick={() => {growthTime = t + 5;click();}} disabled={t > growthTime}>
+      {currentTime > 0 ? 'Growing...' : 'Harvest'}
+    </Button>
+    );
+};
 
 export default function App() {
+  const [currentTime, setCurrentTime] = useState(0);
+  const [plotsize, setPlotSize] = useState(Game.resources.plotsize.amount);
+  function plantClick() {setCurrentTime(prev => prev + 1);Game.resources.money.addAmount(1+Game.resources.plantlevel.amount);};
   return (
     <div className="d-flex flex-column min-vh-100">
       <Navbar className="topnav m-0 py-1 px-2">
@@ -102,42 +119,31 @@ export default function App() {
           </Col>
           <Col xs="8">
           <div>
-          {Object.entries(Game.buttonActions).map(([key, value]) => {
-                  const tooltipId = `tooltip-${key}`;
-                  return (
-                    <div key={key} className="tooltip-container d-inline-block m-2" tabIndex={0} aria-describedby={tooltipId}>
-                      <Button id={value.name} onClick={function () {
+          <div className="tooltip-container d-inline-block m-2" tabIndex={0} aria-describedby={"buyPlantTooltip"}>
+                      <Button onClick={function () {
                         if (value.canAfford()) {
                           value.payCost();
                           value.action();
-                          window.location.reload();
+                           
                         } else {
                           console.log('Not enough resources!');
                         }
                       }} className="tooltip-button" disabled={!value.canAfford()}>
                         <h3 className="m-0">{value.name}</h3>
                       </Button>
-                      {value.tooptip && <div id={tooltipId} role="tooltip" className="tooltip-text">
+                      {value.tooptip && <div id={"buyPlantTooltip"} role="tooltip" className="tooltip-text">
                         <h3 className="m-0">{value.name}</h3>
                         {value.tooptip.split('\n').map((line, index) => (
                           <p key={index} className="m-0">{line}</p>
                         ))}
                       </div>}
                     </div>
-                  );
-                })}
             </div>
             <div>
-                <Button onClick={() => {Game.time += 1;window.location.reload();}}>Wait</Button>
+                <Button onClick={() => {Game.time += 1; }}>Wait</Button>
             </div>
             <div>
-              {Array.from({ length: Game.resources.plotsize.amount }, (v, i) => i).map((i) => (
-                <div key={i} className="plot-cell">
-                  {Array.from({length:Game.resources.plants.amount}, (v, j) => j).map((j) => (
-                    <Plant key={j} />
-                  ))}
-                </div>
-              ))}
+              <Plots t={currentTime} n={plotsize} click={plantClick} />
             </div>
           </Col>
         </Row>
@@ -149,7 +155,7 @@ export default function App() {
               for (let resource in Game.resources) {
                 cookies.remove(Game.resources[resource].name, { path: '/' });
               }
-              window.location.reload();
+               
             }} className="mx-2">Reset Game</button>
           </Nav>
           <Nav className="ms-auto">
@@ -215,7 +221,7 @@ export default function App() {
                           if (value.unlockindex === Game.resources.unlocks.amount) {
                             Game.resources.unlocks.addAmount(1);
                           }
-                          window.location.reload();
+                           
                         } else {
                           console.log('Not enough resources!');
                         }
@@ -245,7 +251,7 @@ export default function App() {
                 cookies.remove(Game.resources[resource].name + 'Gain', { path: '/' });
               }
               cookies.remove('lastChoiceClick', { path: '/' });
-              window.location.reload();
+               
             }} className="mx-2">Reset Game</button>
             next day in: {timeUntilMidnight}
             <button onClick={() => { Game.resources.daily.addAmount(1); }} className={cookies.get('cheats') ? 'mx-2' : 'd-none'}>Skip to Next Day</button>
